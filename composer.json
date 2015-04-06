@@ -1,0 +1,21 @@
+{
+    "name": "badcow/dns-parser",
+    "description": "A PHP library for parsing DNS zone files based on RFC1035",
+    "stability": "dev",
+    "authors": [
+        {
+            "name": "Sam Williams",
+            "email": "sam@badcow.co"
+        }
+    ],
+    "require": {
+        "badcow/dns": "dev-master",
+        "php": ">=5.4"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {
+            "Badcow\\DNS\\Parser\\": "lib/"
+        }
+    }
+}
