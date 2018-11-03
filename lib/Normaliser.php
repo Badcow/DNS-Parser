@@ -25,20 +25,26 @@ class Normaliser
     private $normalisedString = '';
 
     /**
+     * Normaliser constructor.
+     * @param string $zone
+     * @throws \Hoa\Ustring\Exception
+     */
+    public function __construct(string $zone)
+    {
+        //Remove Windows line feeds and tabs
+        $zone = str_replace(["\r\n", "\t"], ["\n", " "], $zone);
+        $this->string = new StringStream($zone);
+    }
+
+    /**
      * @param string $zone
      * @return string
      * @throws \Hoa\Ustring\Exception
      */
-    public function normalise(string $zone): string
+    public static function normalise(string $zone): string
     {
-        //Remove Windows line feeds and tabs
-        $zone = str_replace(["\r\n", "\t"], ["\n", " "], $zone);
-
-        $this->string = new StringStream($zone);
-        $this->process();
-        $this->removeWhitespace();
-
-        return $this->normalisedString;
+        $normaliser = new self($zone);
+        return $normaliser->process();
     }
 
     private function removeWhitespace()
@@ -56,9 +62,10 @@ class Normaliser
     }
 
     /**
+     * @return string
      * @throws \Exception
      */
-    private function process(): void
+    public function process(): string
     {
         while (!$this->string->isEnd()) {
             switch ($this->string->ord()) {
@@ -75,8 +82,15 @@ class Normaliser
 
             $this->append();
         }
+
+        $this->removeWhitespace();
+
+        return $this->normalisedString;
     }
 
+    /**
+     * @throws \Exception
+     */
     private function handleComment()
     {
         if (AsciiChar::SEMICOLON !== $this->string->ord()) {
