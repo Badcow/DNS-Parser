@@ -2,7 +2,7 @@
 
 namespace Badcow\DNS\Parser;
 
-class Rdata
+class RData
 {
     /**
      * @var array
