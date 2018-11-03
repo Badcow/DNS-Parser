@@ -29,7 +29,9 @@ class Parser
     /**
      * @param string $name
      * @param string $zone
+     *
      * @return ZoneInterface
+     *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */
@@ -43,7 +45,9 @@ class Parser
     /**
      * @param $name
      * @param $string
+     *
      * @return ZoneInterface
+     *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */

@@ -6,6 +6,7 @@ class StringIterator extends \ArrayIterator
 {
     /**
      * StringIterator constructor.
+     *
      * @param string $string
      */
     public function __construct(string $string)

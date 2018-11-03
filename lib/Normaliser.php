@@ -18,6 +18,7 @@ class Normaliser
 
     /**
      * Normaliser constructor.
+     *
      * @param string $zone
      */
     public function __construct(string $zone)
@@ -30,7 +31,9 @@ class Normaliser
 
     /**
      * @param string $zone
+     *
      * @return string
+     *
      * @throws ParseException
      */
     public static function normalise(string $zone): string

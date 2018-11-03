@@ -13,7 +13,8 @@ class ParseException extends \Exception
 
     /**
      * ParseException constructor.
-     * @param string $message
+     *
+     * @param string              $message
      * @param StringIterator|null $stringIterator
      */
     public function __construct(string $message = '', StringIterator $stringIterator = null)
@@ -27,7 +28,7 @@ class ParseException extends \Exception
     }
 
     /**
-     * Get line number of current entry on the StringIterator
+     * Get line number of current entry on the StringIterator.
      *
      * @return int
      */
