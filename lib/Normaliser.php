@@ -3,12 +3,11 @@
 namespace Badcow\DNS\Parser;
 
 use LTDBeget\ascii\AsciiChar;
-use LTDBeget\stringstream\StringStream;
 
 class Normaliser
 {
     /**
-     * @var StringStream
+     * @var StringIterator
      */
     private $string;
 
@@ -19,31 +18,20 @@ class Normaliser
 
     /**
      * Normaliser constructor.
-     *
      * @param string $zone
-     *
-     * @throws ParseException
-     * @throws \Hoa\Ustring\Exception
      */
     public function __construct(string $zone)
     {
         //Remove Windows line feeds and tabs
         $zone = str_replace(["\r\n", "\t"], ["\n", ' '], $zone);
 
-        try {
-            $this->string = new StringStream($zone);
-        } catch (\Throwable $e) {
-            throw new ParseException('Unable to initialise zone.');
-        }
+        $this->string = new StringIterator($zone);
     }
 
     /**
      * @param string $zone
-     *
      * @return string
-     *
      * @throws ParseException
-     * @throws \Hoa\Ustring\Exception
      */
     public static function normalise(string $zone): string
     {
@@ -59,7 +47,7 @@ class Normaliser
      */
     public function process(): string
     {
-        while (!$this->string->isEnd()) {
+        while ($this->string->valid()) {
             switch ($this->string->ord()) {
                 case AsciiChar::DOUBLE_QUOTES:
                     $this->handleTxt();
@@ -94,7 +82,7 @@ class Normaliser
             );
         }
 
-        while (AsciiChar::LINE_FEED !== $this->string->ord() && !$this->string->isEnd()) {
+        while (AsciiChar::LINE_FEED !== $this->string->ord() && $this->string->valid()) {
             $this->string->next();
         }
     }
@@ -117,7 +105,7 @@ class Normaliser
         $this->append();
 
         while (AsciiChar::DOUBLE_QUOTES !== $this->string->ord()) {
-            if ($this->string->isEnd()) {
+            if (!$this->string->valid()) {
                 throw new ParseException('Unbalanced double quotation marks. End of file reached.');
             }
 

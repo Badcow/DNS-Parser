@@ -3,6 +3,9 @@ Badcow DNS Zone Parser
 
 This library parses DNS zone files and outputs DNS objects (see [Badcow DNS Zone Library](https://github.com/Badcow/DNS))
 
+## Build Status
+[![Build Status](https://travis-ci.org/Badcow/DNS-Parser.svg?branch=master)](https://travis-ci.org/Badcow/DNS-Parser)
+
 ## Usage
 
 ```php

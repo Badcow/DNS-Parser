@@ -29,12 +29,9 @@ class Parser
     /**
      * @param string $name
      * @param string $zone
-     *
      * @return ZoneInterface
-     *
      * @throws ParseException
      * @throws UnsupportedTypeException
-     * @throws \Hoa\Ustring\Exception
      */
     public static function parse(string $name, string $zone): ZoneInterface
     {
@@ -46,12 +43,9 @@ class Parser
     /**
      * @param $name
      * @param $string
-     *
      * @return ZoneInterface
-     *
      * @throws ParseException
      * @throws UnsupportedTypeException
-     * @throws \Hoa\Ustring\Exception
      */
     public function makeZone($name, $string): ZoneInterface
     {
@@ -138,7 +132,7 @@ class Parser
     /**
      * @param \ArrayIterator $a
      *
-     * @return Rdata\RdataInterface
+     * @return RData\RDataInterface
      *
      * @throws UnsupportedTypeException
      */

@@ -3,35 +3,44 @@
 namespace Badcow\DNS\Parser;
 
 use LTDBeget\ascii\AsciiChar;
-use LTDBeget\stringstream\StringStream;
 
 class ParseException extends \Exception
 {
     /**
-     * @var StringStream
+     * @var StringIterator
      */
-    private $stringSteam;
+    private $stringIterator;
 
-    public function __construct(string $message = '', StringStream $stringSteam = null)
+    /**
+     * ParseException constructor.
+     * @param string $message
+     * @param StringIterator|null $stringIterator
+     */
+    public function __construct(string $message = '', StringIterator $stringIterator = null)
     {
-        if (null !== $stringSteam) {
-            $this->stringSteam = $stringSteam;
+        if (null !== $stringIterator) {
+            $this->stringIterator = $stringIterator;
             $message .= sprintf(' [Line no: %d]', $this->getLineNumber());
         }
 
         parent::__construct($message);
     }
 
-    private function getLineNumber()
+    /**
+     * Get line number of current entry on the StringIterator
+     *
+     * @return int
+     */
+    private function getLineNumber(): int
     {
-        $pos = $this->stringSteam->position();
-        $this->stringSteam->start();
+        $pos = $this->stringIterator->key();
+        $this->stringIterator->rewind();
         $lineNo = 1;
 
-        while ($this->stringSteam->position() < $pos) {
-            if (AsciiChar::LINE_FEED === $this->stringSteam->ord()) {
+        while ($this->stringIterator->key() < $pos) {
+            if (AsciiChar::LINE_FEED === $this->stringIterator->ord()) {
                 ++$lineNo;
-                $this->stringSteam->next();
+                $this->stringIterator->next();
             }
         }
 
