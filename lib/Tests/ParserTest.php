@@ -2,6 +2,7 @@
 
 namespace Badcow\DNS\Parser\Tests;
 
+use Badcow\DNS\Classes;
 use Badcow\DNS\Parser\Parser;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata\Factory;
@@ -13,14 +14,12 @@ use PHPUnit\Framework\TestCase;
 class ParserTest extends TestCase
 {
     /**
-     * @var ZoneInterface
+     * @return ZoneInterface
      */
-    private $zone;
-
-    public function setUp()
+    private function getTestZone(): ZoneInterface
     {
-        $this->zone = new Zone('example.com.');
-        $this->zone->setDefaultTtl(3600);
+        $zone = new Zone('example.com.');
+        $zone->setDefaultTtl(3600);
 
         $soa = new ResourceRecord();
         $soa->setName('@');
@@ -76,27 +75,78 @@ class ParserTest extends TestCase
         ));
         $loc->setComment('This is Canberra');
 
-        $this->zone->addResourceRecord($soa);
-        $this->zone->addResourceRecord($ns1);
-        $this->zone->addResourceRecord($ns2);
-        $this->zone->addResourceRecord($a);
-        $this->zone->addResourceRecord($a6);
-        $this->zone->addResourceRecord($mx1);
-        $this->zone->addResourceRecord($mx2);
-        $this->zone->addResourceRecord($mx3);
-        $this->zone->addResourceRecord($loc);
+        $zone->addResourceRecord($soa);
+        $zone->addResourceRecord($ns1);
+        $zone->addResourceRecord($ns2);
+        $zone->addResourceRecord($a);
+        $zone->addResourceRecord($a6);
+        $zone->addResourceRecord($mx1);
+        $zone->addResourceRecord($mx2);
+        $zone->addResourceRecord($mx3);
+        $zone->addResourceRecord($loc);
+
+        return $zone;
     }
 
+    /**
+     * @throws \Badcow\DNS\Parser\ParseException
+     * @throws \Badcow\DNS\Parser\UnsupportedTypeException
+     */
     public function testParse()
     {
         $zoneBuilder = new AlignedBuilder();
-        $zone = $zoneBuilder->build($this->zone);
+        $zone = $zoneBuilder->build($this->getTestZone());
         $this->setUp();
-        $expectation = clone $this->zone;
+        $expectation = $this->getTestZone();
         foreach ($expectation->getResourceRecords() as $rr) {
             $rr->setComment('');
         }
 
         $this->assertEquals($expectation, Parser::parse('example.com.', $zone));
+    }
+
+    /**
+     * @throws \Badcow\DNS\Parser\ParseException
+     * @throws \Badcow\DNS\Parser\UnsupportedTypeException
+     */
+    public function testConvoluted()
+    {
+        $file = file_get_contents(__DIR__.'/Resources/testConvolutedZone_sample.txt');
+        $zone = Parser::parse('example.com.', $file);
+        $this->assertEquals(3600, $zone->getDefaultTtl());
+        $this->assertCount(25, $zone->getResourceRecords());
+
+        $txt = new ResourceRecord(
+            'testtxt',
+            Factory::txt('v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBg'.
+                'QDZKI3U+9acu3NfEy0NJHIPydxnPLPpnAJ7k2JdrsLqAK1uouMudHI20pgE8RMldB/TeW'.
+                'KXYoRidcGCZWXleUzldDTwZAMDQNpdH1uuxym0VhoZpPbI1RXwpgHRTbCk49VqlC'),
+            600,
+            Classes::INTERNET
+        );
+
+        $txt2 = 'Some text another Some text';
+
+        $this->assertEquals($txt, $this->findRecord($txt->getName(), $zone)[0]);
+        $this->assertEquals($txt2, $this->findRecord('test', $zone)[0]->getRdata()->getText());
+        $this->assertCount(1, $this->findRecord('xn----7sbfndkfpirgcajeli2a4pnc.xn----7sbbfcqfo2cfcagacemif0ap5q', $zone));
+    }
+
+    /**
+     * @param string $name
+     * @param ZoneInterface $zone
+     * @return array
+     */
+    private function findRecord(string $name, ZoneInterface $zone): array
+    {
+        $records = [];
+
+        foreach ($zone->getResourceRecords() as $resourceRecord) {
+            if ($name === $resourceRecord->getName()) {
+                $records[] = $resourceRecord;
+            }
+        }
+
+        return $records;
     }
 }

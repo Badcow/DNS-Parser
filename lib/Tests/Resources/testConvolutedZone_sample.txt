@@ -15,7 +15,8 @@ test 600 IN TXT (;11111
 "Some text" ; or like this
 " another Some text"
 )
-testtxt 600 IN TXT "v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDZKI3U+9acu3NfEy0NJHIPydxnPLPpnAJ7k2JdrsLqAK1uouMudHI20pgE8RMldB/TeWKXYoRidcGCZWXleUzldDTwZAMDQNpdH1uuxym0VhoZpPbI1RXwpgHRTbCk49VqlC"
+testtxt 600 IN TXT ("v=DKIM1; k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDZKI3U+9acu3NfEy0NJHIPydxnPLPpnAJ7"
+"k2JdrsLqAK1uouMudHI20pgE8RMldB/TeWKXYoRidcGCZWXleUzldDTwZAMDQNpdH1uuxym0VhoZpPbI1RXwpgHRTbCk49VqlC")
 testmx 600    IN MX 20 @;345345
 testmx2 600 IN MX 20 .;23''33'123;;123;
 _domainkeytxt 600 IN TXT "t=y;o=~;\0";312

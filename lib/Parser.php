@@ -8,6 +8,7 @@ use Badcow\DNS\Zone;
 use Badcow\DNS\Parser\RData as RDataEnum;
 use Badcow\DNS\Rdata;
 use Badcow\DNS\ZoneInterface;
+use LTDBeget\ascii\AsciiChar;
 
 class Parser
 {
@@ -83,7 +84,8 @@ class Parser
             return;
         }
 
-        $iterator = (new \ArrayObject(explode(' ', $line)))->getIterator();
+        $parts = explode(' ', $line);
+        $iterator = new \ArrayIterator($parts);
         $record = new ResourceRecord();
 
         // Is it a TTL?
@@ -186,16 +188,54 @@ class Parser
             case Rdata\SRV::TYPE:
                 return Rdata\Factory::Srv($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
             case Rdata\TXT::TYPE:
-                $txt = '';
-                while ($a->valid()) {
-                    $txt .= $this->pop($a).' ';
-                }
-                $txt = stripslashes($txt);
-
-                return Rdata\Factory::txt(trim($txt, '" '));
+                return $this->extractTxtRecord($a);
             default:
                 throw new UnsupportedTypeException($type);
         }
+    }
+
+    /**
+     * @param \ArrayIterator $a
+     * @return Rdata\TXT
+     * @throws ParseException
+     */
+    private function extractTxtRecord(\ArrayIterator $a): Rdata\TXT
+    {
+        $txt = '';
+        while ($a->valid()) {
+            $txt .= $this->pop($a).' ';
+        }
+        $txt = substr($txt, 0, -1);
+
+        $string = new StringIterator($txt);
+        $txt = '';
+        $doubleQuotesOpen = false;
+
+        while ($string->valid()) {
+            switch ($string->ord()) {
+                case AsciiChar::BACKSLASH:
+                    $string->next();
+                    $txt .= $string->current();
+                    $string->next();
+                    break;
+                case AsciiChar::DOUBLE_QUOTES:
+                    $doubleQuotesOpen = !$doubleQuotesOpen;
+                    $string->next();
+                    break;
+                default:
+                    if ($doubleQuotesOpen) {
+                        $txt .= $string->current();
+                    }
+                    $string->next();
+                    break;
+            }
+        }
+
+        if ($doubleQuotesOpen) {
+            throw new ParseException('Unbalanced double quotation marks.');
+        }
+
+        return Rdata\Factory::txt($txt);
     }
 
     /**
