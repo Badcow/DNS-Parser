@@ -1,114 +1,227 @@
 <?php
-/*
- * This file is part of Badcow DNS Library.
- *
- * (c) Samuel Williams <sam@badcow.co>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
 
 namespace Badcow\DNS\Parser;
 
-use Badcow\DNS\Zone;
+use Badcow\DNS\Classes;
 use Badcow\DNS\ResourceRecord;
-use Badcow\DNS\Parser\Definition\DefinitionInterface;
-use Badcow\DNS\Parser\Definition\ARdataDefinition;
-use Badcow\DNS\Parser\Definition\CnameRdataDefinition;
-use Badcow\DNS\Parser\Definition\SoaRdataDefinition;
+use Badcow\DNS\Zone;
+use Badcow\DNS\Parser\Rdata as RdataEnum;
+use Badcow\DNS\Rdata;
 use Badcow\DNS\ZoneInterface;
 
-class Parser implements ParserInterface
+class Parser
 {
     /**
-     * @var array
+     * @var string
      */
-    protected $definitions = array();
+    private $string;
+
+    /**
+     * @var string
+     */
+    private $previousName;
 
     /**
      * @var ZoneInterface
      */
-    protected $zone;
+    private $zone;
 
     /**
-     * @param DefinitionInterface[] $definitions
-     * @param ZoneInterface $zone
-     */
-    public function __construct(array $definitions = array(), ZoneInterface $zone = null)
-    {
-        $definitions = array_merge($definitions, array(
-            new ARdataDefinition(),
-            new CnameRdataDefinition(),
-            new SoaRdataDefinition(),
-        ));
-
-        foreach ($definitions as $definition) {
-            /** @var DefinitionInterface $definition */
-            $this->addDefinition($definition);
-        }
-
-        $this->zone = (null === $zone) ? new Zone : $zone;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function addDefinition(DefinitionInterface $definition)
-    {
-        $this->definitions[] = $definition;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function parse($zoneName, $zone)
-    {
-        $this->zone->setZoneName($zoneName);
-
-        foreach (Interpreter::expand($zone) as $line) {
-            /** @var Line $line */
-            $this->zone->addResourceRecord($this->lineToRr($line));
-        }
-
-        return $zone;
-    }
-
-    /**
-     * Create a resource record from a Line
+     * @param string $name
+     * @param string $zone
      *
-     * @param Line $line
-     * @return ResourceRecord
+     * @return ZoneInterface
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     * @throws \Hoa\Ustring\Exception
      */
-    private function lineToRr(Line $line)
+    public static function parse(string $name, string $zone): ZoneInterface
     {
-        $rr = new ResourceRecord();
+        $parser = new self();
 
-        if (null !== $class = Interpreter::getClassFromLine($line->getData())) {
-            $rr->setClass($class);
-        }
-
-        $rr->setRdata($this->getRData($line->getData()));
-        $rr->setComment($line->getComment());
-        $rr->setName(Interpreter::getResourceNameFromLine($line->getData()));
-
-        return $rr;
+        return $parser->makeZone($name, $zone);
     }
 
     /**
-     * Creates an RR corresponding to the $rdata definition
+     * @param $name
+     * @param $string
      *
-     * @param $rdata
-     * @return \Badcow\DNS\Rdata\RdataInterface|null
+     * @return ZoneInterface
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     * @throws \Hoa\Ustring\Exception
      */
-    private function getRData($rdata)
+    public function makeZone($name, $string): ZoneInterface
     {
-        foreach ($this->definitions as $definition) {
-            /** @var DefinitionInterface $definition */
-            if ($definition->isValid($definition)) {
-                return $definition->parse($rdata);
-            }
+        $this->zone = new Zone($name);
+        $this->string = Normaliser::normalise($string);
+        $lines = explode("\n", $this->string);
+
+        foreach ($lines as $line) {
+            $this->processLine($line);
         }
 
-        return null;
+        return $this->zone;
+    }
+
+    /**
+     * @param string $line
+     *
+     * @throws UnsupportedTypeException
+     */
+    private function processLine(string $line)
+    {
+        if (1 === preg_match('/^\$ORIGIN/i', strtoupper($line))) {
+            return;
+        }
+
+        $matches = [];
+        if (1 === preg_match('/^\$TTL (\d+)/i', strtoupper($line), $matches)) {
+            $ttl = (int) $matches[1];
+            $this->zone->setDefaultTtl($ttl);
+
+            return;
+        }
+
+        $iterator = (new \ArrayObject(explode(' ', $line)))->getIterator();
+        $record = new ResourceRecord();
+
+        // Is it a TTL?
+        if (1 === preg_match('/^\d+$/', $iterator->current())) {
+            $record->setName($this->previousName);
+            goto ttl;
+        }
+
+        // Is it a valid class?
+        if (Classes::isValid(strtoupper($iterator->current()))) {
+            $record->setName($this->previousName);
+            goto _class;
+        }
+
+        // Is it a valid RDATA type?
+        if (RdataEnum::isValid(strtoupper($iterator->current()))) {
+            $record->setName($this->previousName);
+            goto type;
+        }
+
+        $record->setName($iterator->current());
+        $this->previousName = $iterator->current();
+        $iterator->next();
+
+        ttl:
+        $matches = [];
+        if (1 === preg_match('/^(\d+)$/', $iterator->current(), $matches)) {
+            $ttl = (int) $matches[1];
+            $record->setTtl($ttl);
+            $iterator->next();
+        }
+
+        _class:
+        if (Classes::isValid(strtoupper($iterator->current()))) {
+            $record->setClass(strtoupper($iterator->current()));
+            $iterator->next();
+        }
+
+        type:
+        if (!RdataEnum::isValid(strtoupper($iterator->current()))) {
+            throw new UnsupportedTypeException($iterator->current());
+        }
+
+        $rdata = $this->extractRdata($iterator);
+        $record->setRdata($rdata);
+
+        $this->zone->addResourceRecord($record);
+    }
+
+    /**
+     * @param \ArrayIterator $a
+     *
+     * @return Rdata\RdataInterface
+     *
+     * @throws UnsupportedTypeException
+     */
+    private function extractRdata(\ArrayIterator $a): Rdata\RdataInterface
+    {
+        $type = strtoupper($a->current());
+        $a->next();
+        switch ($type) {
+            case Rdata\A::TYPE:
+                return Rdata\Factory::A($this->pop($a));
+            case Rdata\AAAA::TYPE:
+                return Rdata\Factory::Aaaa($this->pop($a));
+            case Rdata\CNAME::TYPE:
+                return Rdata\Factory::Cname($this->pop($a));
+            case Rdata\DNAME::TYPE:
+                return Rdata\Factory::Dname($this->pop($a));
+            case Rdata\HINFO::TYPE:
+                return Rdata\Factory::Hinfo($this->pop($a), $this->pop($a));
+            case Rdata\LOC::TYPE:
+                $lat = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+                $lon = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+
+                return Rdata\Factory::Loc($lat, $lon, $this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+            case Rdata\MX::TYPE:
+                return Rdata\Factory::Mx($this->pop($a), $this->pop($a));
+            case Rdata\NS::TYPE:
+                return Rdata\Factory::Ns($this->pop($a));
+            case Rdata\PTR::TYPE:
+                return Rdata\Factory::Ptr($this->pop($a));
+            case Rdata\SOA::TYPE:
+                return Rdata\Factory::Soa(
+                    $this->pop($a),
+                    $this->pop($a),
+                    $this->pop($a),
+                    $this->pop($a),
+                    $this->pop($a),
+                    $this->pop($a),
+                    $this->pop($a)
+                );
+            case Rdata\SRV::TYPE:
+                return Rdata\Factory::Srv($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+            case Rdata\TXT::TYPE:
+                $txt = '';
+                while ($a->valid()) {
+                    $txt .= $this->pop($a).' ';
+                }
+                $txt = stripslashes($txt);
+
+                return Rdata\Factory::txt(trim($txt, '" '));
+            default:
+                throw new UnsupportedTypeException($type);
+        }
+    }
+
+    /**
+     * Return current entry and moves the iterator to the next entry.
+     *
+     * @param \ArrayIterator $arrayIterator
+     *
+     * @return mixed
+     */
+    private function pop(\ArrayIterator $arrayIterator)
+    {
+        $current = $arrayIterator->current();
+        $arrayIterator->next();
+
+        return $current;
+    }
+
+    /**
+     * Transform a DMS string to a decimal representation. Used for LOC records.
+     *
+     * @param int    $deg
+     * @param int    $m
+     * @param float  $s
+     * @param string $hemi
+     *
+     * @return float
+     */
+    private function dmsToDecimal(int $deg, int $m, float $s, string $hemi): float
+    {
+        $multiplier = ('S' === $hemi || 'W' === $hemi) ? -1 : 1;
+
+        return $multiplier * ($deg + ($m / 60) + ($s / 3600));
     }
 }
