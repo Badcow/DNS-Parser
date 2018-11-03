@@ -161,7 +161,14 @@ class Parser
                 $lat = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
                 $lon = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
 
-                return Rdata\Factory::Loc($lat, $lon, $this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+                return Rdata\Factory::Loc(
+                    $lat,
+                    $lon,
+                    (float) $this->pop($a),
+                    (float) $this->pop($a),
+                    (float) $this->pop($a),
+                    (float) $this->pop($a)
+                );
             case Rdata\MX::TYPE:
                 return Rdata\Factory::Mx($this->pop($a), $this->pop($a));
             case Rdata\NS::TYPE:
