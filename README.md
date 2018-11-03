@@ -5,8 +5,8 @@ This library parses DNS zone files and outputs DNS objects (see [Badcow DNS Zone
 
 ## Build Status
 [![Build Status](https://travis-ci.org/Badcow/DNS-Parser.svg?branch=master)](https://travis-ci.org/Badcow/DNS-Parser)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/samuelwilliams/PHP-DNS-SERVER/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/samuelwilliams/PHP-DNS-SERVER/?branch=master)
-[![Code Coverage](https://scrutinizer-ci.com/g/samuelwilliams/PHP-DNS-SERVER/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/samuelwilliams/PHP-DNS-SERVER/?branch=master)
+[![Code Coverage](https://scrutinizer-ci.com/g/Badcow/DNS-Parser/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/Badcow/DNS-Parser/?branch=master)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/Badcow/DNS-Parser/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/Badcow/DNS-Parser/?branch=master)
 
 ## Usage
 
