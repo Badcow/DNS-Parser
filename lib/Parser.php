@@ -196,7 +196,9 @@ class Parser
 
     /**
      * @param \ArrayIterator $a
+     *
      * @return Rdata\TXT
+     *
      * @throws ParseException
      */
     private function extractTxtRecord(\ArrayIterator $a): Rdata\TXT

@@ -3,7 +3,9 @@
 namespace Badcow\DNS\Parser\Tests;
 
 use Badcow\DNS\Classes;
+use Badcow\DNS\Parser\ParseException;
 use Badcow\DNS\Parser\Parser;
+use Badcow\DNS\Parser\UnsupportedTypeException;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata\Factory;
 use Badcow\DNS\ResourceRecord;
@@ -63,6 +65,8 @@ class ParserTest extends TestCase
         $mx3->setName('@');
         $mx3->setRdata(Factory::Mx(30, 'mail-gw3.example.net.'));
 
+        $dname = new ResourceRecord('hq', Factory::Dname('syd.example.com.'));
+
         $loc = new ResourceRecord();
         $loc->setName('canberra');
         $loc->setRdata(Factory::Loc(
@@ -80,6 +84,7 @@ class ParserTest extends TestCase
         $zone->addResourceRecord($ns2);
         $zone->addResourceRecord($a);
         $zone->addResourceRecord($a6);
+        $zone->addResourceRecord($dname);
         $zone->addResourceRecord($mx1);
         $zone->addResourceRecord($mx2);
         $zone->addResourceRecord($mx3);
@@ -114,7 +119,7 @@ class ParserTest extends TestCase
         $file = file_get_contents(__DIR__.'/Resources/testConvolutedZone_sample.txt');
         $zone = Parser::parse('example.com.', $file);
         $this->assertEquals(3600, $zone->getDefaultTtl());
-        $this->assertCount(25, $zone->getResourceRecords());
+        $this->assertCount(28, $zone->getResourceRecords());
 
         $txt = new ResourceRecord(
             'testtxt',
@@ -130,11 +135,26 @@ class ParserTest extends TestCase
         $this->assertEquals($txt, $this->findRecord($txt->getName(), $zone)[0]);
         $this->assertEquals($txt2, $this->findRecord('test', $zone)[0]->getRdata()->getText());
         $this->assertCount(1, $this->findRecord('xn----7sbfndkfpirgcajeli2a4pnc.xn----7sbbfcqfo2cfcagacemif0ap5q', $zone));
+        $this->assertCount(4, $this->findRecord('testmx', $zone));
     }
 
     /**
-     * @param string $name
+     * @expectedException \Badcow\DNS\Parser\UnsupportedTypeException
+     * @expectedExceptionMessage The RDATA type "A6" is not supported.
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     */
+    public function testThrowsUnsupportedException()
+    {
+        $zone = 'example.com. 7200 IN A6 2001:acad::1337; This is invalid.';
+        Parser::parse('example.com.', $zone);
+    }
+
+    /**
+     * @param string        $name
      * @param ZoneInterface $zone
+     *
      * @return array
      */
     private function findRecord(string $name, ZoneInterface $zone): array

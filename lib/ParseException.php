@@ -41,8 +41,8 @@ class ParseException extends \Exception
         while ($this->stringIterator->key() < $pos) {
             if (AsciiChar::LINE_FEED === $this->stringIterator->ord()) {
                 ++$lineNo;
-                $this->stringIterator->next();
             }
+            $this->stringIterator->next();
         }
 
         return $lineNo;

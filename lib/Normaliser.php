@@ -118,7 +118,7 @@ class Normaliser
             }
 
             if (AsciiChar::LINE_FEED === $this->string->ord()) {
-                throw new ParseException('Line Feed found within double quotation marks context', $this->string);
+                throw new ParseException('Line Feed found within double quotation marks context.', $this->string);
             }
 
             $this->append();
