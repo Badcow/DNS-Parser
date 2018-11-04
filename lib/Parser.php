@@ -69,6 +69,7 @@ class Parser
      * @param string $line
      *
      * @throws UnsupportedTypeException
+     * @throws ParseException
      */
     private function processLine(string $line)
     {
@@ -141,6 +142,7 @@ class Parser
      * @return RData\RDataInterface
      *
      * @throws UnsupportedTypeException
+     * @throws ParseException
      */
     private function extractRdata(\ArrayIterator $a): Rdata\RdataInterface
     {

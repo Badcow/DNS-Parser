@@ -2,7 +2,7 @@
 
 namespace Badcow\DNS\Parser;
 
-use LTDBeget\ascii\AsciiChar;
+use LTDBeget\ascii\AsciiChar as Char;
 
 class Normaliser
 {
@@ -52,13 +52,13 @@ class Normaliser
     {
         while ($this->string->valid()) {
             switch ($this->string->ord()) {
-                case AsciiChar::DOUBLE_QUOTES:
+                case Char::DOUBLE_QUOTES:
                     $this->handleTxt();
                     break;
-                case AsciiChar::SEMICOLON:
+                case Char::SEMICOLON:
                     $this->handleComment();
                     break;
-                case AsciiChar::OPEN_BRACKET:
+                case Char::OPEN_BRACKET:
                     $this->handleMultiline();
                     break;
             }
@@ -78,14 +78,14 @@ class Normaliser
      */
     private function handleComment(): void
     {
-        if (AsciiChar::SEMICOLON !== $this->string->ord()) {
+        if ($this->string->isNot(Char::SEMICOLON)) {
             throw new ParseException(sprintf('Semicolon (;) expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
             );
         }
 
-        while (AsciiChar::LINE_FEED !== $this->string->ord() && $this->string->valid()) {
+        while ($this->string->isNot(Char::LINE_FEED) && $this->string->valid()) {
             $this->string->next();
         }
     }
@@ -98,7 +98,7 @@ class Normaliser
      */
     private function handleTxt(): void
     {
-        if (AsciiChar::DOUBLE_QUOTES !== $this->string->ord()) {
+        if ($this->string->isNot(Char::DOUBLE_QUOTES)) {
             throw new ParseException(sprintf('Double Quotes (") expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
@@ -107,17 +107,17 @@ class Normaliser
 
         $this->append();
 
-        while (AsciiChar::DOUBLE_QUOTES !== $this->string->ord()) {
+        while ($this->string->isNot(Char::DOUBLE_QUOTES)) {
             if (!$this->string->valid()) {
                 throw new ParseException('Unbalanced double quotation marks. End of file reached.');
             }
 
             //If escape character
-            if (AsciiChar::BACKSLASH === $this->string->ord()) {
+            if ($this->string->is(Char::BACKSLASH)) {
                 $this->append();
             }
 
-            if (AsciiChar::LINE_FEED === $this->string->ord()) {
+            if ($this->string->is(Char::LINE_FEED)) {
                 throw new ParseException('Line Feed found within double quotation marks context.', $this->string);
             }
 
@@ -132,7 +132,7 @@ class Normaliser
      */
     private function handleMultiline(): void
     {
-        if (AsciiChar::OPEN_BRACKET !== $this->string->ord()) {
+        if ($this->string->isNot(Char::OPEN_BRACKET)) {
             throw new ParseException(sprintf('Open bracket "(" expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
@@ -143,21 +143,21 @@ class Normaliser
         $this->string->next();
         while ($openBracket) {
             switch ($this->string->ord()) {
-                case AsciiChar::DOUBLE_QUOTES:
+                case Char::DOUBLE_QUOTES:
                     $this->handleTxt();
                     $this->append();
                     break;
-                case AsciiChar::SEMICOLON:
+                case Char::SEMICOLON:
                     $this->handleComment();
                     break;
-                case AsciiChar::LINE_FEED:
+                case Char::LINE_FEED:
                     $this->string->next();
                     break;
-                case AsciiChar::CLOSE_BRACKET:
+                case Char::CLOSE_BRACKET:
                     $openBracket = false;
                     $this->string->next();
                     break;
-                case AsciiChar::NULL:
+                case Char::NULL:
                     throw new ParseException('End of file reached. Unclosed bracket.');
                 default:
                     $this->append();

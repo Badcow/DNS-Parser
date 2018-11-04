@@ -21,4 +21,22 @@ class StringIterator extends \ArrayIterator
     {
         return ord($this->current());
     }
+
+    /**
+     * @param int $value
+     * @return bool
+     */
+    public function is(int $value): bool
+    {
+        return $value === $this->ord();
+    }
+
+    /**
+     * @param int $value
+     * @return bool
+     */
+    public function isNot(int $value): bool
+    {
+        return $value !== $this->ord();
+    }
 }
