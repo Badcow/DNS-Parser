@@ -5,10 +5,10 @@ namespace Badcow\DNS\Parser;
 use Badcow\DNS\Classes;
 use Badcow\DNS\ResourceRecord;
 use Badcow\DNS\Zone;
-use Badcow\DNS\Parser\RData as RDataEnum;
 use Badcow\DNS\Rdata;
 use Badcow\DNS\ZoneInterface;
 use LTDBeget\ascii\AsciiChar;
+use Badcow\DNS\Rdata\UnsupportedTypeException;
 
 class Parser
 {
@@ -102,7 +102,7 @@ class Parser
         }
 
         // Is it a valid RDATA type?
-        if (RDataEnum::isValid(strtoupper($iterator->current()))) {
+        if (RDataTypes::isValid(strtoupper($iterator->current()))) {
             $record->setName($this->previousName);
             goto type;
         }
@@ -126,7 +126,7 @@ class Parser
         }
 
         type:
-        if (!RDataEnum::isValid(strtoupper($iterator->current()))) {
+        if (!RDataTypes::isValid(strtoupper($iterator->current()))) {
             throw new UnsupportedTypeException($iterator->current());
         }
 

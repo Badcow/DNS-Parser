@@ -5,7 +5,7 @@ namespace Badcow\DNS\Parser\Tests;
 use Badcow\DNS\Classes;
 use Badcow\DNS\Parser\ParseException;
 use Badcow\DNS\Parser\Parser;
-use Badcow\DNS\Parser\UnsupportedTypeException;
+use Badcow\DNS\Rdata\UnsupportedTypeException;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata\Factory;
 use Badcow\DNS\ResourceRecord;
@@ -95,7 +95,7 @@ class ParserTest extends TestCase
 
     /**
      * @throws \Badcow\DNS\Parser\ParseException
-     * @throws \Badcow\DNS\Parser\UnsupportedTypeException
+     * @throws \Badcow\DNS\Rdata\UnsupportedTypeException
      */
     public function testParse()
     {
@@ -112,7 +112,7 @@ class ParserTest extends TestCase
 
     /**
      * @throws \Badcow\DNS\Parser\ParseException
-     * @throws \Badcow\DNS\Parser\UnsupportedTypeException
+     * @throws \Badcow\DNS\Rdata\UnsupportedTypeException
      */
     public function testConvoluted()
     {
@@ -139,8 +139,7 @@ class ParserTest extends TestCase
     }
 
     /**
-     * @expectedException \Badcow\DNS\Parser\UnsupportedTypeException
-     * @expectedExceptionMessage The RDATA type "A6" is not supported.
+     * @expectedException \Badcow\DNS\Rdata\UnsupportedTypeException
      *
      * @throws ParseException
      * @throws UnsupportedTypeException

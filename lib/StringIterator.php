@@ -24,6 +24,7 @@ class StringIterator extends \ArrayIterator
 
     /**
      * @param int $value
+     *
      * @return bool
      */
     public function is(int $value): bool
@@ -33,6 +34,7 @@ class StringIterator extends \ArrayIterator
 
     /**
      * @param int $value
+     *
      * @return bool
      */
     public function isNot(int $value): bool
