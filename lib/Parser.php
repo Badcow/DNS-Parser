@@ -56,9 +56,8 @@ class Parser
     {
         $this->zone = new Zone($name);
         $this->string = Normaliser::normalise($string);
-        $lines = explode("\n", $this->string);
 
-        foreach ($lines as $line) {
+        foreach (explode("\n", $this->string) as $line) {
             $this->processLine($line);
         }
 
@@ -73,142 +72,121 @@ class Parser
      */
     private function processLine(string $line)
     {
-        $matches = [];
+        $iterator = new \ArrayIterator(explode(' ', $line));
 
-        if (1 === preg_match('/^\$TTL (\d+)/i', strtoupper($line), $matches)) {
-            $ttl = (int) $matches[1];
-            $this->zone->setDefaultTtl($ttl);
-
+        if (1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current())) {
+            $this->processControlEntry($iterator);
             return;
         }
 
-        if (1 === preg_match('/^\$[a-zA-Z0-9]+/i', strtoupper($line))) {
-            return;
-        }
+        $resourceRecord = new ResourceRecord();
 
-        $parts = explode(' ', $line);
-        $iterator = new \ArrayIterator($parts);
-        $record = new ResourceRecord();
-
-        // Is it a TTL?
-        if (1 === preg_match('/^\d+$/', $iterator->current())) {
-            $record->setName($this->previousName);
-            goto ttl;
-        }
-
-        // Is it a valid class?
-        if (Classes::isValid(strtoupper($iterator->current()))) {
-            $record->setName($this->previousName);
-            goto _class;
-        }
-
-        // Is it a valid RDATA type?
-        if (RDataTypes::isValid(strtoupper($iterator->current()))) {
-            $record->setName($this->previousName);
-            goto type;
-        }
-
-        $record->setName($iterator->current());
-        $this->previousName = $iterator->current();
-        $iterator->next();
-
-        ttl:
-        $matches = [];
-        if (1 === preg_match('/^(\d+)$/', $iterator->current(), $matches)) {
-            $ttl = (int) $matches[1];
-            $record->setTtl($ttl);
+        if (
+            1 === preg_match('/^\d+$/', $iterator->current()) ||
+            Classes::isValid(strtoupper($iterator->current())) ||
+            RDataTypes::isValid(strtoupper($iterator->current()))
+        ) {
+            $resourceRecord->setName($this->previousName);
+        } else {
+            $resourceRecord->setName($iterator->current());
+            $this->previousName = $iterator->current();
             $iterator->next();
         }
 
-        _class:
-        if (Classes::isValid(strtoupper($iterator->current()))) {
-            $record->setClass(strtoupper($iterator->current()));
-            $iterator->next();
-        }
+        $this->processTtl($iterator, $resourceRecord);
+        $this->processClass($iterator, $resourceRecord);
+        $resourceRecord->setRdata($this->extractRdata($iterator));
 
-        type:
-        if (!RDataTypes::isValid(strtoupper($iterator->current()))) {
-            throw new UnsupportedTypeException($iterator->current());
-        }
-
-        $rdata = $this->extractRdata($iterator);
-        $record->setRdata($rdata);
-
-        $this->zone->addResourceRecord($record);
+        $this->zone->addResourceRecord($resourceRecord);
     }
 
     /**
-     * @param \ArrayIterator $a
+     * Processes control entries at the top of a BIND record, i.e. $ORIGIN, $TTL, $INCLUDE, etc.
+     *
+     * @param \ArrayIterator $iterator
+     */
+    private function processControlEntry(\ArrayIterator $iterator): void
+    {
+        if ('$TTL' === strtoupper($iterator->current())) {
+            $iterator->next();
+            $this->zone->setDefaultTtl((int) $iterator->current());
+        }
+    }
+
+    /**
+     * Set RR's TTL if there is one.
+     *
+     * @param \ArrayIterator $iterator
+     * @param ResourceRecord $resourceRecord
+     */
+    private function processTtl(\ArrayIterator $iterator, ResourceRecord $resourceRecord)
+    {
+        if (1 === preg_match('/^\d+$/', $iterator->current())) {
+            $resourceRecord->setTtl($iterator->current());
+            $iterator->next();
+        }
+    }
+
+    /**
+     * Set RR's class if there is one.
+     *
+     * @param \ArrayIterator $iterator
+     * @param ResourceRecord $resourceRecord
+     */
+    private function processClass(\ArrayIterator $iterator, ResourceRecord $resourceRecord)
+    {
+        if (Classes::isValid(strtoupper($iterator->current()))) {
+            $resourceRecord->setClass(strtoupper($iterator->current()));
+            $iterator->next();
+        }
+    }
+
+    /**
+     * @param \ArrayIterator $iterator
      *
      * @return RData\RDataInterface
      *
      * @throws UnsupportedTypeException
      * @throws ParseException
      */
-    private function extractRdata(\ArrayIterator $a): Rdata\RdataInterface
+    private function extractRdata(\ArrayIterator $iterator): Rdata\RdataInterface
     {
-        $type = strtoupper($a->current());
-        $a->next();
-        switch ($type) {
-            case Rdata\A::TYPE:
-                return Rdata\Factory::A($this->pop($a));
-            case Rdata\AAAA::TYPE:
-                return Rdata\Factory::Aaaa($this->pop($a));
-            case Rdata\CNAME::TYPE:
-                return Rdata\Factory::Cname($this->pop($a));
-            case Rdata\DNAME::TYPE:
-                return Rdata\Factory::Dname($this->pop($a));
-            case Rdata\HINFO::TYPE:
-                return Rdata\Factory::Hinfo($this->pop($a), $this->pop($a));
-            case Rdata\LOC::TYPE:
-                $lat = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
-                $lon = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+        $type = strtoupper($iterator->current());
+        $iterator->next();
 
-                return Rdata\Factory::Loc(
-                    $lat,
-                    $lon,
-                    (float) $this->pop($a),
-                    (float) $this->pop($a),
-                    (float) $this->pop($a),
-                    (float) $this->pop($a)
-                );
-            case Rdata\MX::TYPE:
-                return Rdata\Factory::Mx($this->pop($a), $this->pop($a));
-            case Rdata\NS::TYPE:
-                return Rdata\Factory::Ns($this->pop($a));
-            case Rdata\PTR::TYPE:
-                return Rdata\Factory::Ptr($this->pop($a));
-            case Rdata\SOA::TYPE:
-                return Rdata\Factory::Soa(
-                    $this->pop($a),
-                    $this->pop($a),
-                    $this->pop($a),
-                    $this->pop($a),
-                    $this->pop($a),
-                    $this->pop($a),
-                    $this->pop($a)
-                );
-            case Rdata\SRV::TYPE:
-                return Rdata\Factory::Srv($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
-            case Rdata\TXT::TYPE:
-                return $this->extractTxtRecord($a);
-            default:
-                throw new UnsupportedTypeException($type);
+        if (!Rdata\Factory::isTypeImplemented($type)) {
+            throw new UnsupportedTypeException($type);
         }
+
+        if (Rdata\LOC::TYPE === $type) {
+            return $this->handleLocRdata($iterator);
+        }
+
+        if (Rdata\TXT::TYPE === $type) {
+            return $this->handleTxtRdata($iterator);
+        }
+
+        $parameters = [];
+
+        while ($iterator->valid()) {
+            $parameters[] = $this->pop($iterator);
+        }
+
+        return call_user_func_array(['\\Badcow\\DNS\\Rdata\\Factory', $type], $parameters);
     }
 
     /**
-     * @param \ArrayIterator $a
+     * @param \ArrayIterator $iterator
      *
      * @return Rdata\TXT
      *
      * @throws ParseException
      */
-    private function extractTxtRecord(\ArrayIterator $a): Rdata\TXT
+    private function handleTxtRdata(\ArrayIterator $iterator): Rdata\TXT
     {
         $txt = '';
-        while ($a->valid()) {
-            $txt .= $this->pop($a).' ';
+        while ($iterator->valid()) {
+            $txt .= $this->pop($iterator).' ';
         }
         $txt = substr($txt, 0, -1);
 
@@ -273,5 +251,24 @@ class Parser
         $multiplier = ('S' === $hemi || 'W' === $hemi) ? -1 : 1;
 
         return $multiplier * ($deg + ($m / 60) + ($s / 3600));
+    }
+
+    /**
+     * @param \ArrayIterator $a
+     * @return Rdata\LOC
+     */
+    private function handleLocRdata(\ArrayIterator $a): Rdata\LOC
+    {
+        $lat = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+        $lon = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+
+        return Rdata\Factory::Loc(
+            $lat,
+            $lon,
+            (float) $this->pop($a),
+            (float) $this->pop($a),
+            (float) $this->pop($a),
+            (float) $this->pop($a)
+        );
     }
 }
