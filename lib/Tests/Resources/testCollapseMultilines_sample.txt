@@ -1,5 +1,6 @@
 $ORIGIN example.com.
-$TTL 3600
+$TTL 1337
+$INCLUDE hq.example.com.txt
 @            IN SOA  (
                      example.com.       ; MNAME
                      post.example.com.  ; RNAME

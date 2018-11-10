@@ -73,15 +73,16 @@ class Parser
      */
     private function processLine(string $line)
     {
-        if (1 === preg_match('/^\$ORIGIN/i', strtoupper($line))) {
-            return;
-        }
-
         $matches = [];
+
         if (1 === preg_match('/^\$TTL (\d+)/i', strtoupper($line), $matches)) {
             $ttl = (int) $matches[1];
             $this->zone->setDefaultTtl($ttl);
 
+            return;
+        }
+
+        if (1 === preg_match('/^\$[a-zA-Z0-9]+/i', strtoupper($line))) {
             return;
         }
 

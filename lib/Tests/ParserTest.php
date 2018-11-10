@@ -16,6 +16,8 @@ use PHPUnit\Framework\TestCase;
 class ParserTest extends TestCase
 {
     /**
+     * Build a test zone.
+     *
      * @return ZoneInterface
      */
     private function getTestZone(): ZoneInterface
@@ -94,14 +96,16 @@ class ParserTest extends TestCase
     }
 
     /**
+     * Parser creates valid dns object.
+     *
      * @throws \Badcow\DNS\Parser\ParseException
      * @throws \Badcow\DNS\Rdata\UnsupportedTypeException
      */
-    public function testParse()
+    public function testParserCreatesValidDnsObject()
     {
         $zoneBuilder = new AlignedBuilder();
         $zone = $zoneBuilder->build($this->getTestZone());
-        $this->setUp();
+
         $expectation = $this->getTestZone();
         foreach ($expectation->getResourceRecords() as $rr) {
             $rr->setComment('');
@@ -111,10 +115,28 @@ class ParserTest extends TestCase
     }
 
     /**
+     * Parser ignores control entries other than TTL.
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     */
+    public function testParserIgnoresControlEntriesOtherThanTtl()
+    {
+        $file = file_get_contents(__DIR__.'/Resources/testCollapseMultilines_sample.txt');
+        $zone = Parser::parse('example.com.', $file);
+
+        $this->assertEquals('example.com.', $zone->getName());
+        $this->assertEquals('::1', $this->findRecord('ipv6.domain', $zone)[0]->getRdata()->getAddress());
+        $this->assertEquals(1337, $zone->getDefaultTtl());
+    }
+
+    /**
+     * Parser can handle convoluted zone record.
+     *
      * @throws \Badcow\DNS\Parser\ParseException
      * @throws \Badcow\DNS\Rdata\UnsupportedTypeException
      */
-    public function testConvoluted()
+    public function testParserCanHandleConvolutedZoneRecord()
     {
         $file = file_get_contents(__DIR__.'/Resources/testConvolutedZone_sample.txt');
         $zone = Parser::parse('example.com.', $file);
@@ -139,18 +161,22 @@ class ParserTest extends TestCase
     }
 
     /**
+     * Throws unsupported exception when RData is invalid.
+     *
      * @expectedException \Badcow\DNS\Rdata\UnsupportedTypeException
      *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */
-    public function testThrowsUnsupportedException()
+    public function testThrowsUnsupportedExceptionWhenRdataIsInvalid()
     {
         $zone = 'example.com. 7200 IN A6 2001:acad::1337; This is invalid.';
         Parser::parse('example.com.', $zone);
     }
 
     /**
+     * Find all records in a Zone named $name.
+     *
      * @param string        $name
      * @param ZoneInterface $zone
      *

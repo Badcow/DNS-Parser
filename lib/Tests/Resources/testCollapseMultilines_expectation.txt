@@ -1,5 +1,6 @@
 $ORIGIN example.com.
-$TTL 3600
+$TTL 1337
+$INCLUDE hq.example.com.txt
 @ IN SOA example.com. post.example.com. 2014110501 3600 14400 604800 3600
 @ NS ns1.nameserver.com.
 @ NS ns2.nameserver.com.

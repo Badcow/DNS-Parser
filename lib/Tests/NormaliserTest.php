@@ -24,7 +24,7 @@ TXT;
     /**
      * @throws \Badcow\DNS\Parser\ParseException
      */
-    public function testClearComments()
+    public function testRemovesComments()
     {
         $zone = file_get_contents(__DIR__.'/Resources/testClearComments_sample.txt');
         $expectation = str_replace("\r\n", "\n", file_get_contents(__DIR__.'/Resources/testClearComments_expectation.txt'));
@@ -32,9 +32,11 @@ TXT;
     }
 
     /**
+     * Multi-line records collapse onto single line.
+     *
      * @throws \Badcow\DNS\Parser\ParseException
      */
-    public function testCollapseMultilines()
+    public function testMultilineRecordsCollapseOntoSingleLine()
     {
         $zone = file_get_contents(__DIR__.'/Resources/testCollapseMultilines_sample.txt');
         $expectation = str_replace("\r\n", "\n", file_get_contents(__DIR__.'/Resources/testCollapseMultilines_expectation.txt'));
@@ -42,35 +44,41 @@ TXT;
     }
 
     /**
+     * Unbalanced brackets cause ParseException.
+     *
      * @expectedException \Badcow\DNS\Parser\ParseException
      * @expectedExceptionMessage End of file reached. Unclosed bracket.
      *
      * @throws \Badcow\DNS\Parser\ParseException
      */
-    public function testUnbalancedBracketsException()
+    public function testUnbalancedBracketsCauseParseException()
     {
         Normaliser::normalise($this->unbalancedBrackets);
     }
 
     /**
+     * Unbalanced quotation marks cause ParseException.
+     *
      * @expectedException \Badcow\DNS\Parser\ParseException
      * @expectedExceptionMessage Unbalanced double quotation marks. End of file reached.
      *
      * @throws \Badcow\DNS\Parser\ParseException
      */
-    public function testUnbalancedQuotesException()
+    public function testUnbalancedQuotationMarksCauseParseException()
     {
         $string = 'mail IN TXT "Some string';
         Normaliser::normalise($string);
     }
 
     /**
+     * Line feed inside quotation marks cause exception.
+     *
      * @expectedException \Badcow\DNS\Parser\ParseException
      * @expectedExceptionMessage Line Feed found within double quotation marks context.
      *
      * @throws \Badcow\DNS\Parser\ParseException
      */
-    public function testLineFeedInQuotesException()
+    public function testLineFeedInsideQuotationMarksCauseException()
     {
         $string = "mail IN TXT \"Some \nstring\"";
         Normaliser::normalise($string);
