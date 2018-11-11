@@ -290,33 +290,13 @@ class Parser
         $rdata = new Rdata\APL();
 
         while ($iterator->valid()) {
-            $inclusive = true;
-            $string = new StringIterator($iterator->current());
-
-            if ($string->is(AsciiChar::EXCLAMATION_MARK)) {
-                $inclusive = false;
-                $string->next();
+            $matches = [];
+            if (1 !== preg_match('/^(?<negate>!)?[1-2]:(?<block>.+)$/i', $iterator->current(), $matches)) {
+                throw new ParseException(sprintf('"%s" is not a valid IP range.', $iterator->current()));
             }
 
-            if ($string->isNot(AsciiChar::ONE) && $string->isNot(AsciiChar::TWO)) {
-                throw new ParseException(sprintf('Unexpected character. Expected "1" or "2", got "%s".', $string->current()));
-            }
-
-            $string->next();
-
-            if ($string->isNot(AsciiChar::COLON)) {
-                throw new ParseException(sprintf('Unexpected character. Expected ":", got "%s".', $string->current()));
-            }
-
-            $string->next();
-
-            $ipBlock = '';
-            while ($string->valid()) {
-                $ipBlock .= $string->current();
-                $string->next();
-            }
-
-            $rdata->addAddressRange(\IPBlock::create($ipBlock), $inclusive);
+            $ipBlock = \IPBlock::create($matches['block']);
+            $rdata->addAddressRange($ipBlock, '!' !== $matches['negate']);
             $iterator->next();
         }
 

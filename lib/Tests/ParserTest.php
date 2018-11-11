@@ -195,7 +195,7 @@ class ParserTest extends TestCase
 
     /**
      * @expectedException \Badcow\DNS\Parser\ParseException
-     * @expectedExceptionMessage Unexpected character. Expected "1" or "2", got "3".
+     * @expectedExceptionMessage "3:192.168.0.64/30" is not a valid IP range.
      *
      * @throws ParseException
      * @throws UnsupportedTypeException
@@ -209,7 +209,7 @@ class ParserTest extends TestCase
 
     /**
      * @expectedException \Badcow\DNS\Parser\ParseException
-     * @expectedExceptionMessage Unexpected character. Expected ":", got "-".
+     * @expectedExceptionMessage "!1-192.168.0.64/30" is not a valid IP range.
      *
      * @throws ParseException
      * @throws UnsupportedTypeException
