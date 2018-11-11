@@ -5,6 +5,7 @@ namespace Badcow\DNS\Parser\Tests;
 use Badcow\DNS\Classes;
 use Badcow\DNS\Parser\ParseException;
 use Badcow\DNS\Parser\Parser;
+use Badcow\DNS\Rdata\APL;
 use Badcow\DNS\Rdata\UnsupportedTypeException;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata\Factory;
@@ -171,6 +172,52 @@ class ParserTest extends TestCase
     public function testThrowsUnsupportedExceptionWhenRdataIsInvalid()
     {
         $zone = 'example.com. 7200 IN A6 2001:acad::1337; This is invalid.';
+        Parser::parse('example.com.', $zone);
+    }
+
+    /**
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     */
+    public function testParserCanHandleAplRecords()
+    {
+        $file = file_get_contents(__DIR__.'/Resources/testCollapseMultilines_sample.txt');
+        $zone = Parser::parse('example.com.', $file);
+
+        /** @var APL $apl */
+        $apl = $this->findRecord('multicast', $zone)[0]->getRdata();
+        $this->assertCount(2, $apl->getIncludedAddressRanges());
+        $this->assertCount(2, $apl->getExcludedAddressRanges());
+
+        $this->assertEquals('192.168.0.0/23', (string) $apl->getIncludedAddressRanges()[0]);
+        $this->assertEquals('2001:acad:1::8/128', (string) $apl->getExcludedAddressRanges()[1]);
+    }
+
+    /**
+     * @expectedException \Badcow\DNS\Parser\ParseException
+     * @expectedExceptionMessage Unexpected character. Expected "1" or "2", got "3".
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     */
+    public function testMalformedAplRecordThrowsException1()
+    {
+        $zone = 'multicast 3600 IN APL 3:192.168.0.64/30';
+
+        Parser::parse('example.com.', $zone);
+    }
+
+    /**
+     * @expectedException \Badcow\DNS\Parser\ParseException
+     * @expectedExceptionMessage Unexpected character. Expected ":", got "-".
+     *
+     * @throws ParseException
+     * @throws UnsupportedTypeException
+     */
+    public function testMalformedAplRecordThrowsException2()
+    {
+        $zone = 'multicast 3600 IN APL !1-192.168.0.64/30';
+
         Parser::parse('example.com.', $zone);
     }
 

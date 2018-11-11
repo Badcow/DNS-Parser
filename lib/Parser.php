@@ -76,6 +76,7 @@ class Parser
 
         if (1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current())) {
             $this->processControlEntry($iterator);
+
             return;
         }
 
@@ -166,6 +167,10 @@ class Parser
             return $this->handleTxtRdata($iterator);
         }
 
+        if (Rdata\APL::TYPE === $type) {
+            return $this->handleAplRdata($iterator);
+        }
+
         $parameters = [];
 
         while ($iterator->valid()) {
@@ -254,21 +259,67 @@ class Parser
     }
 
     /**
-     * @param \ArrayIterator $a
+     * @param \ArrayIterator $iterator
+     *
      * @return Rdata\LOC
      */
-    private function handleLocRdata(\ArrayIterator $a): Rdata\LOC
+    private function handleLocRdata(\ArrayIterator $iterator): Rdata\LOC
     {
-        $lat = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
-        $lon = $this->dmsToDecimal($this->pop($a), $this->pop($a), $this->pop($a), $this->pop($a));
+        $lat = $this->dmsToDecimal($this->pop($iterator), $this->pop($iterator), $this->pop($iterator), $this->pop($iterator));
+        $lon = $this->dmsToDecimal($this->pop($iterator), $this->pop($iterator), $this->pop($iterator), $this->pop($iterator));
 
         return Rdata\Factory::Loc(
             $lat,
             $lon,
-            (float) $this->pop($a),
-            (float) $this->pop($a),
-            (float) $this->pop($a),
-            (float) $this->pop($a)
+            (float) $this->pop($iterator),
+            (float) $this->pop($iterator),
+            (float) $this->pop($iterator),
+            (float) $this->pop($iterator)
         );
+    }
+
+    /**
+     * @param \ArrayIterator $iterator
+     *
+     * @return Rdata\APL
+     *
+     * @throws ParseException
+     */
+    private function handleAplRdata(\ArrayIterator $iterator): Rdata\APL
+    {
+        $rdata = new Rdata\APL();
+
+        while ($iterator->valid()) {
+            $inclusive = true;
+            $string = new StringIterator($iterator->current());
+
+            if ($string->is(AsciiChar::EXCLAMATION_MARK)) {
+                $inclusive = false;
+                $string->next();
+            }
+
+            if ($string->isNot(AsciiChar::ONE) && $string->isNot(AsciiChar::TWO)) {
+                throw new ParseException(sprintf('Unexpected character. Expected "1" or "2", got "%s".', $string->current()));
+            }
+
+            $string->next();
+
+            if ($string->isNot(AsciiChar::COLON)) {
+                throw new ParseException(sprintf('Unexpected character. Expected ":", got "%s".', $string->current()));
+            }
+
+            $string->next();
+
+            $ipBlock = '';
+            while ($string->valid()) {
+                $ipBlock .= $string->current();
+                $string->next();
+            }
+
+            $rdata->addAddressRange(\IPBlock::create($ipBlock), $inclusive);
+            $iterator->next();
+        }
+
+        return $rdata;
     }
 }

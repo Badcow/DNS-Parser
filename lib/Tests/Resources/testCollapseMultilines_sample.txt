@@ -29,3 +29,10 @@ ipv6.domain    AAAA ::1 ; This is an IPv6 domain.
 @               MX   30 mail-gw3.example.net.
 
 mail     IN    TXT  "THIS IS SOME TEXT; WITH A SEMICOLON"
+
+multicast       APL  (
+                     1:192.168.0.0/23
+                     2:2001:acad:1::/112
+                     !1:192.168.1.64/28
+                     !2:2001:acad:1::8/128
+                     )
