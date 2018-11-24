@@ -2,8 +2,6 @@
 
 namespace Badcow\DNS\Parser;
 
-use LTDBeget\ascii\AsciiChar;
-
 class ParseException extends \Exception
 {
     /**
@@ -39,7 +37,7 @@ class ParseException extends \Exception
         $lineNo = 1;
 
         while ($this->stringIterator->key() < $pos) {
-            if (AsciiChar::LINE_FEED === $this->stringIterator->ord()) {
+            if ($this->stringIterator->is(Tokens::LINE_FEED)) {
                 ++$lineNo;
             }
             $this->stringIterator->next();

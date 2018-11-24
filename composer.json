@@ -9,8 +9,7 @@
     ],
     "require": {
         "php": "~7.1",
-        "badcow/dns": "~1.1",
-        "ltd-beget/ascii-table" : "~1.0"
+        "badcow/dns": "~1.1"
     },
     "require-dev": {
         "phpunit/phpunit": "~7.3"

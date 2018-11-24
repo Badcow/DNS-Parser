@@ -7,7 +7,6 @@ use Badcow\DNS\ResourceRecord;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata;
 use Badcow\DNS\ZoneInterface;
-use LTDBeget\ascii\AsciiChar;
 use Badcow\DNS\Rdata\UnsupportedTypeException;
 
 class Parser
@@ -200,13 +199,13 @@ class Parser
         $doubleQuotesOpen = false;
 
         while ($string->valid()) {
-            switch ($string->ord()) {
-                case AsciiChar::BACKSLASH:
+            switch ($string->current()) {
+                case Tokens::BACKSLASH:
                     $string->next();
                     $txt .= $string->current();
                     $string->next();
                     break;
-                case AsciiChar::DOUBLE_QUOTES:
+                case Tokens::DOUBLE_QUOTES:
                     $doubleQuotesOpen = !$doubleQuotesOpen;
                     $string->next();
                     break;

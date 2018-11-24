@@ -15,30 +15,22 @@ class StringIterator extends \ArrayIterator
     }
 
     /**
-     * @return int
-     */
-    public function ord(): int
-    {
-        return ord($this->current());
-    }
-
-    /**
-     * @param int $value
+     * @param string $value
      *
      * @return bool
      */
-    public function is(int $value): bool
+    public function is(string $value): bool
     {
-        return $value === $this->ord();
+        return $value === $this->current();
     }
 
     /**
-     * @param int $value
+     * @param string $value
      *
      * @return bool
      */
-    public function isNot(int $value): bool
+    public function isNot(string $value): bool
     {
-        return $value !== $this->ord();
+        return $value !== $this->current();
     }
 }

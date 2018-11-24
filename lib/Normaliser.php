@@ -2,8 +2,6 @@
 
 namespace Badcow\DNS\Parser;
 
-use LTDBeget\ascii\AsciiChar as Char;
-
 class Normaliser
 {
     /**
@@ -51,14 +49,14 @@ class Normaliser
     public function process(): string
     {
         while ($this->string->valid()) {
-            switch ($this->string->ord()) {
-                case Char::DOUBLE_QUOTES:
+            switch ($this->string->current()) {
+                case Tokens::DOUBLE_QUOTES:
                     $this->handleTxt();
                     break;
-                case Char::SEMICOLON:
+                case Tokens::SEMICOLON:
                     $this->handleComment();
                     break;
-                case Char::OPEN_BRACKET:
+                case Tokens::OPEN_BRACKET:
                     $this->handleMultiline();
                     break;
             }
@@ -78,14 +76,14 @@ class Normaliser
      */
     private function handleComment(): void
     {
-        if ($this->string->isNot(Char::SEMICOLON)) {
+        if ($this->string->isNot(Tokens::SEMICOLON)) {
             throw new ParseException(sprintf('Semicolon (;) expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
             );
         }
 
-        while ($this->string->isNot(Char::LINE_FEED) && $this->string->valid()) {
+        while ($this->string->isNot(Tokens::LINE_FEED) && $this->string->valid()) {
             $this->string->next();
         }
     }
@@ -98,7 +96,7 @@ class Normaliser
      */
     private function handleTxt(): void
     {
-        if ($this->string->isNot(Char::DOUBLE_QUOTES)) {
+        if ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
             throw new ParseException(sprintf('Double Quotes (") expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
@@ -107,17 +105,17 @@ class Normaliser
 
         $this->append();
 
-        while ($this->string->isNot(Char::DOUBLE_QUOTES)) {
+        while ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
             if (!$this->string->valid()) {
                 throw new ParseException('Unbalanced double quotation marks. End of file reached.');
             }
 
             //If escape character
-            if ($this->string->is(Char::BACKSLASH)) {
+            if ($this->string->is(Tokens::BACKSLASH)) {
                 $this->append();
             }
 
-            if ($this->string->is(Char::LINE_FEED)) {
+            if ($this->string->is(Tokens::LINE_FEED)) {
                 throw new ParseException('Line Feed found within double quotation marks context.', $this->string);
             }
 
@@ -132,7 +130,7 @@ class Normaliser
      */
     private function handleMultiline(): void
     {
-        if ($this->string->isNot(Char::OPEN_BRACKET)) {
+        if ($this->string->isNot(Tokens::OPEN_BRACKET)) {
             throw new ParseException(sprintf('Open bracket "(" expected as current entry, character "%s" instead.',
                 $this->string->current()),
                 $this->string
@@ -141,27 +139,29 @@ class Normaliser
 
         $openBracket = true;
         $this->string->next();
-        while ($openBracket) {
-            switch ($this->string->ord()) {
-                case Char::DOUBLE_QUOTES:
+        while ($openBracket && $this->string->valid()) {
+            switch ($this->string->current()) {
+                case Tokens::DOUBLE_QUOTES:
                     $this->handleTxt();
                     $this->append();
                     break;
-                case Char::SEMICOLON:
+                case Tokens::SEMICOLON:
                     $this->handleComment();
                     break;
-                case Char::LINE_FEED:
+                case Tokens::LINE_FEED:
                     $this->string->next();
                     break;
-                case Char::CLOSE_BRACKET:
+                case Tokens::CLOSE_BRACKET:
                     $openBracket = false;
                     $this->string->next();
                     break;
-                case Char::NULL:
-                    throw new ParseException('End of file reached. Unclosed bracket.');
                 default:
                     $this->append();
             }
+        }
+
+        if ($openBracket) {
+            throw new ParseException('End of file reached. Unclosed bracket.');
         }
     }
 
