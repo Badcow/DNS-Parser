@@ -4,7 +4,7 @@ namespace Badcow\DNS\Parser;
 
 class Tokens
 {
-    public const SEMICOLON = ';'; 
+    public const SEMICOLON = ';';
     public const DOUBLE_QUOTES = '"';
     public const OPEN_BRACKET = '(';
     public const CLOSE_BRACKET = ')';
