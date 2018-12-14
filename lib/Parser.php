@@ -6,7 +6,6 @@ use Badcow\DNS\Classes;
 use Badcow\DNS\ResourceRecord;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata;
-use Badcow\DNS\ZoneInterface;
 use Badcow\DNS\Rdata\UnsupportedTypeException;
 
 class Parser
@@ -22,7 +21,7 @@ class Parser
     private $previousName;
 
     /**
-     * @var ZoneInterface
+     * @var Zone
      */
     private $zone;
 
@@ -30,12 +29,12 @@ class Parser
      * @param string $name
      * @param string $zone
      *
-     * @return ZoneInterface
+     * @return Zone
      *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */
-    public static function parse(string $name, string $zone): ZoneInterface
+    public static function parse(string $name, string $zone): Zone
     {
         $parser = new self();
 
@@ -46,17 +45,17 @@ class Parser
      * @param $name
      * @param $string
      *
-     * @return ZoneInterface
+     * @return Zone
      *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */
-    public function makeZone($name, $string): ZoneInterface
+    public function makeZone($name, $string): Zone
     {
         $this->zone = new Zone($name);
         $this->string = Normaliser::normalise($string);
 
-        foreach (explode("\n", $this->string) as $line) {
+        foreach (explode(Tokens::LINE_FEED, $this->string) as $line) {
             $this->processLine($line);
         }
 
@@ -246,13 +245,13 @@ class Parser
      * @param int    $deg
      * @param int    $m
      * @param float  $s
-     * @param string $hemi
+     * @param string $hemisphere
      *
      * @return float
      */
-    private function dmsToDecimal(int $deg, int $m, float $s, string $hemi): float
+    private function dmsToDecimal(int $deg, int $m, float $s, string $hemisphere): float
     {
-        $multiplier = ('S' === $hemi || 'W' === $hemi) ? -1 : 1;
+        $multiplier = ('S' === $hemisphere || 'W' === $hemisphere) ? -1 : 1;
 
         return $multiplier * ($deg + ($m / 60) + ($s / 3600));
     }

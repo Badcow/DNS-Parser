@@ -11,7 +11,6 @@ use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata\Factory;
 use Badcow\DNS\ResourceRecord;
 use Badcow\DNS\AlignedBuilder;
-use Badcow\DNS\ZoneInterface;
 use PHPUnit\Framework\TestCase;
 
 class ParserTest extends TestCase
@@ -19,9 +18,9 @@ class ParserTest extends TestCase
     /**
      * Build a test zone.
      *
-     * @return ZoneInterface
+     * @return Zone
      */
-    private function getTestZone(): ZoneInterface
+    private function getTestZone(): Zone
     {
         $zone = new Zone('example.com.');
         $zone->setDefaultTtl(3600);
@@ -225,11 +224,11 @@ class ParserTest extends TestCase
      * Find all records in a Zone named $name.
      *
      * @param string        $name
-     * @param ZoneInterface $zone
+     * @param Zone $zone
      *
      * @return array
      */
-    private function findRecord(string $name, ZoneInterface $zone): array
+    private function findRecord(string $name, Zone $zone): array
     {
         $records = [];
 
