@@ -171,12 +171,11 @@ class Normaliser
     private function removeWhitespace(): void
     {
         $this->normalisedString = preg_replace('/ {2,}/', ' ', $this->normalisedString);
-        $lines = explode("\n", $this->normalisedString);
+        $lines = explode(Tokens::LINE_FEED, $this->normalisedString);
         $this->normalisedString = '';
         foreach ($lines as $line) {
-            $line = trim($line);
-            if ('' !== $line) {
-                $this->normalisedString .= $line."\n";
+            if ('' !== $line = trim($line)) {
+                $this->normalisedString .= $line.Tokens::LINE_FEED;
             }
         }
         $this->normalisedString = rtrim($this->normalisedString);
