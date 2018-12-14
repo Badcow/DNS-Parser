@@ -183,7 +183,7 @@ class Normaliser
     }
 
     /**
-     * Add current entry to nomalisedString and moves to next entry.
+     * Add current entry to normalisedString and moves to next entry.
      */
     private function append()
     {
