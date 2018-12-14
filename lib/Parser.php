@@ -157,16 +157,13 @@ class Parser
             throw new UnsupportedTypeException($type);
         }
 
-        if (Rdata\LOC::TYPE === $type) {
-            return $this->handleLocRdata($iterator);
-        }
-
-        if (Rdata\TXT::TYPE === $type) {
-            return $this->handleTxtRdata($iterator);
-        }
-
-        if (Rdata\APL::TYPE === $type) {
-            return $this->handleAplRdata($iterator);
+        switch ($type) {
+            case Rdata\LOC::TYPE:
+                return $this->handleLocRdata($iterator);
+            case Rdata\TXT::TYPE:
+                return $this->handleTxtRdata($iterator);
+            case Rdata\APL::TYPE:
+                return $this->handleAplRdata($iterator);
         }
 
         $parameters = [];
