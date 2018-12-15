@@ -70,7 +70,7 @@ class Parser
      */
     private function processLine(string $line)
     {
-        $iterator = new \ArrayIterator(explode(' ', $line));
+        $iterator = new \ArrayIterator(explode(Tokens::SPACE, $line));
 
         if (1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current())) {
             $this->processControlEntry($iterator);
@@ -166,13 +166,7 @@ class Parser
                 return $this->handleAplRdata($iterator);
         }
 
-        $parameters = [];
-
-        while ($iterator->valid()) {
-            $parameters[] = $this->pop($iterator);
-        }
-
-        return call_user_func_array(['\\Badcow\\DNS\\Rdata\\Factory', $type], $parameters);
+        return call_user_func_array(['\\Badcow\\DNS\\Rdata\\Factory', $type], $this->getAllRemaining($iterator));
     }
 
     /**
@@ -184,21 +178,15 @@ class Parser
      */
     private function handleTxtRdata(\ArrayIterator $iterator): Rdata\TXT
     {
-        $txt = '';
-        while ($iterator->valid()) {
-            $txt .= $this->pop($iterator).' ';
-        }
-        $txt = substr($txt, 0, -1);
-
-        $string = new StringIterator($txt);
-        $txt = '';
+        $string = new StringIterator(implode(Tokens::SPACE, self::getAllRemaining($iterator)));
+        $txt = new StringIterator();
         $doubleQuotesOpen = false;
 
         while ($string->valid()) {
             switch ($string->current()) {
                 case Tokens::BACKSLASH:
                     $string->next();
-                    $txt .= $string->current();
+                    $txt->append($string->current());
                     $string->next();
                     break;
                 case Tokens::DOUBLE_QUOTES:
@@ -207,7 +195,7 @@ class Parser
                     break;
                 default:
                     if ($doubleQuotesOpen) {
-                        $txt .= $string->current();
+                        $txt->append($string->current());
                     }
                     $string->next();
                     break;
@@ -218,39 +206,57 @@ class Parser
             throw new ParseException('Unbalanced double quotation marks.');
         }
 
-        return Rdata\Factory::txt($txt);
+        return Rdata\Factory::txt((string) $txt);
     }
 
     /**
      * Return current entry and moves the iterator to the next entry.
      *
-     * @param \ArrayIterator $arrayIterator
+     * @param \ArrayIterator $iterator
      *
      * @return mixed
      */
-    private function pop(\ArrayIterator $arrayIterator)
+    private function pop(\ArrayIterator $iterator)
     {
-        $current = $arrayIterator->current();
-        $arrayIterator->next();
+        $current = $iterator->current();
+        $iterator->next();
 
         return $current;
     }
 
     /**
+     * Get all the remaining values of an iterator as an array.
+     *
+     * @param \ArrayIterator $iterator
+     *
+     * @return array
+     */
+    private function getAllRemaining(\ArrayIterator $iterator): array
+    {
+        $values = [];
+        while ($iterator->valid()) {
+            $values[] = $iterator->current();
+            $iterator->next();
+        }
+
+        return $values;
+    }
+
+    /**
      * Transform a DMS string to a decimal representation. Used for LOC records.
      *
-     * @param int    $deg
-     * @param int    $m
-     * @param float  $s
-     * @param string $hemisphere
+     * @param int    $deg Degrees
+     * @param int    $min Minutes
+     * @param float  $sec Seconds
+     * @param string $hemisphere Either 'N', 'S', 'E', or 'W'
      *
      * @return float
      */
-    private function dmsToDecimal(int $deg, int $m, float $s, string $hemisphere): float
+    private function dmsToDecimal(int $deg, int $min, float $sec, string $hemisphere): float
     {
         $multiplier = ('S' === $hemisphere || 'W' === $hemisphere) ? -1 : 1;
 
-        return $multiplier * ($deg + ($m / 60) + ($s / 3600));
+        return $multiplier * ($deg + ($min / 60) + ($sec / 3600));
     }
 
     /**

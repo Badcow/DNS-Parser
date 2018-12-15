@@ -74,13 +74,13 @@ TXT;
      * Line feed inside quotation marks cause exception.
      *
      * @expectedException \Badcow\DNS\Parser\ParseException
-     * @expectedExceptionMessage Line Feed found within double quotation marks context.
+     * @expectedExceptionMessage Line Feed found within double quotation marks context. [Line no: 2]
      *
      * @throws \Badcow\DNS\Parser\ParseException
      */
     public function testLineFeedInsideQuotationMarksCauseException()
     {
-        $string = "mail IN TXT \"Some \nstring\"";
+        $string = "www IN CNAME @\n     mail IN TXT \"Some \nstring\"";
         Normaliser::normalise($string);
     }
 }

@@ -7,7 +7,7 @@ class RDataTypes
     /**
      * @var array
      */
-    private static $names = [
+    public static $names = [
         self::TYPE_A,
         self::TYPE_NS,
         self::TYPE_CNAME,
@@ -99,13 +99,5 @@ class RDataTypes
     public static function isValid(string $type): bool
     {
         return false !== array_search($type, self::$names);
-    }
-
-    /**
-     * @return array An array of all valid RDATA types
-     */
-    public static function getTypes(): array
-    {
-        return self::$names;
     }
 }

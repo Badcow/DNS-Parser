@@ -9,7 +9,7 @@ class StringIterator extends \ArrayIterator
      *
      * @param string $string
      */
-    public function __construct(string $string)
+    public function __construct(string $string = '')
     {
         parent::__construct(str_split($string));
     }
@@ -32,5 +32,13 @@ class StringIterator extends \ArrayIterator
     public function isNot(string $value): bool
     {
         return $value !== $this->current();
+    }
+
+    /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return implode($this->getArrayCopy());
     }
 }

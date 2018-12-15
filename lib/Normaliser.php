@@ -22,7 +22,7 @@ class Normaliser
     public function __construct(string $zone)
     {
         //Remove Windows line feeds and tabs
-        $zone = str_replace(["\r\n", "\t"], ["\n", ' '], $zone);
+        $zone = str_replace([Tokens::CARRIAGE_RETURN, Tokens::TAB], ['', Tokens::SPACE], $zone);
 
         $this->string = new StringIterator($zone);
     }
@@ -72,17 +72,9 @@ class Normaliser
     /**
      * Ignores the comment section.
      *
-     * @throws ParseException
      */
     private function handleComment(): void
     {
-        if ($this->string->isNot(Tokens::SEMICOLON)) {
-            throw new ParseException(sprintf('Semicolon (;) expected as current entry, character "%s" instead.',
-                $this->string->current()),
-                $this->string
-            );
-        }
-
         while ($this->string->isNot(Tokens::LINE_FEED) && $this->string->valid()) {
             $this->string->next();
         }
@@ -96,13 +88,6 @@ class Normaliser
      */
     private function handleTxt(): void
     {
-        if ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
-            throw new ParseException(sprintf('Double Quotes (") expected as current entry, character "%s" instead.',
-                $this->string->current()),
-                $this->string
-            );
-        }
-
         $this->append();
 
         while ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
@@ -130,13 +115,6 @@ class Normaliser
      */
     private function handleMultiline(): void
     {
-        if ($this->string->isNot(Tokens::OPEN_BRACKET)) {
-            throw new ParseException(sprintf('Open bracket "(" expected as current entry, character "%s" instead.',
-                $this->string->current()),
-                $this->string
-            );
-        }
-
         $openBracket = true;
         $this->string->next();
         while ($openBracket && $this->string->valid()) {
@@ -170,19 +148,19 @@ class Normaliser
      */
     private function removeWhitespace(): void
     {
-        $this->normalisedString = preg_replace('/ {2,}/', ' ', $this->normalisedString);
-        $lines = explode(Tokens::LINE_FEED, $this->normalisedString);
-        $this->normalisedString = '';
-        foreach ($lines as $line) {
+        $string = preg_replace('/ {2,}/', Tokens::SPACE, $this->normalisedString);
+        $lines = [];
+
+        foreach (explode(Tokens::LINE_FEED, $string) as $line) {
             if ('' !== $line = trim($line)) {
-                $this->normalisedString .= $line.Tokens::LINE_FEED;
+                $lines[] = $line;
             }
         }
-        $this->normalisedString = rtrim($this->normalisedString);
+        $this->normalisedString = implode(Tokens::LINE_FEED, $lines);
     }
 
     /**
-     * Add current entry to normalisedString and moves to next entry.
+     * Add current entry to normalisedString and moves iterator to next entry.
      */
     private function append()
     {
