@@ -178,7 +178,7 @@ class Parser
      */
     private function handleTxtRdata(\ArrayIterator $iterator): Rdata\TXT
     {
-        $string = new StringIterator(implode(Tokens::SPACE, self::getAllRemaining($iterator)));
+        $string = new StringIterator(implode(Tokens::SPACE, $this->getAllRemaining($iterator)));
         $txt = new StringIterator();
         $doubleQuotesOpen = false;
 
