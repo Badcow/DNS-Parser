@@ -245,9 +245,9 @@ class Parser
     /**
      * Transform a DMS string to a decimal representation. Used for LOC records.
      *
-     * @param int    $deg Degrees
-     * @param int    $min Minutes
-     * @param float  $sec Seconds
+     * @param int    $deg        Degrees
+     * @param int    $min        Minutes
+     * @param float  $sec        Seconds
      * @param string $hemisphere Either 'N', 'S', 'E', or 'W'
      *
      * @return float

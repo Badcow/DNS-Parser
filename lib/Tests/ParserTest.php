@@ -223,8 +223,8 @@ class ParserTest extends TestCase
     /**
      * Find all records in a Zone named $name.
      *
-     * @param string        $name
-     * @param Zone $zone
+     * @param string $name
+     * @param Zone   $zone
      *
      * @return array
      */

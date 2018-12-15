@@ -71,7 +71,6 @@ class Normaliser
 
     /**
      * Ignores the comment section.
-     *
      */
     private function handleComment(): void
     {
