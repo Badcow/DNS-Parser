@@ -161,17 +161,17 @@ class ParserTest extends TestCase
     }
 
     /**
-     * Throws unsupported exception when RData is invalid.
-     *
-     * @expectedException \Badcow\DNS\Rdata\UnsupportedTypeException
-     *
      * @throws ParseException
      * @throws UnsupportedTypeException
      */
-    public function testThrowsUnsupportedExceptionWhenRdataIsInvalid()
+    public function testCanHandlePolymorphicRdata()
     {
-        $zone = 'example.com. 7200 IN A6 2001:acad::1337; This is invalid.';
-        Parser::parse('example.com.', $zone);
+        $string = 'example.com. 7200 IN A6 2001:acad::1337; This is invalid.';
+        $zone = Parser::parse('example.com.', $string);
+        $rr = $zone->getResourceRecords()[0];
+
+        $this->assertEquals('A6', $rr->getRdata()->getType());
+        $this->assertEquals('2001:acad::1337', $rr->getRdata()->output());
     }
 
     /**

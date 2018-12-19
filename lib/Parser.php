@@ -6,7 +6,6 @@ use Badcow\DNS\Classes;
 use Badcow\DNS\ResourceRecord;
 use Badcow\DNS\Zone;
 use Badcow\DNS\Rdata;
-use Badcow\DNS\Rdata\UnsupportedTypeException;
 
 class Parser
 {
@@ -32,7 +31,6 @@ class Parser
      * @return Zone
      *
      * @throws ParseException
-     * @throws UnsupportedTypeException
      */
     public static function parse(string $name, string $zone): Zone
     {
@@ -48,7 +46,6 @@ class Parser
      * @return Zone
      *
      * @throws ParseException
-     * @throws UnsupportedTypeException
      */
     public function makeZone($name, $string): Zone
     {
@@ -65,7 +62,6 @@ class Parser
     /**
      * @param string $line
      *
-     * @throws UnsupportedTypeException
      * @throws ParseException
      */
     private function processLine(string $line)
@@ -145,7 +141,6 @@ class Parser
      *
      * @return RData\RDataInterface
      *
-     * @throws UnsupportedTypeException
      * @throws ParseException
      */
     private function extractRdata(\ArrayIterator $iterator): Rdata\RdataInterface
@@ -154,7 +149,7 @@ class Parser
         $iterator->next();
 
         if (!Rdata\Factory::isTypeImplemented($type)) {
-            throw new UnsupportedTypeException($type);
+            return new PolymorphicRdata($type, implode(' ', $this->getAllRemaining($iterator)));
         }
 
         switch ($type) {
