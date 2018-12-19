@@ -26,14 +26,14 @@ class PolymorphicRdata implements RdataInterface
      */
     public function __construct(string $type = null, string $data = null)
     {
-        $this->type = $type;
-        $this->data = $data;
+        $this->setType($type);
+        $this->setData($data);
     }
 
     /**
      * @param string $type
      */
-    public function setType(string $type): void
+    public function setType(?string $type): void
     {
         $this->type = $type;
     }
@@ -49,7 +49,7 @@ class PolymorphicRdata implements RdataInterface
     /**
      * @param string $data
      */
-    public function setData(string $data): void
+    public function setData(?string $data): void
     {
         $this->data = $data;
     }
@@ -67,6 +67,6 @@ class PolymorphicRdata implements RdataInterface
      */
     public function output(): string
     {
-        return $this->data;
+        return $this->getData();
     }
 }

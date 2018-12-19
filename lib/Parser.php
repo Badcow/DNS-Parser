@@ -68,7 +68,7 @@ class Parser
     {
         $iterator = new \ArrayIterator(explode(Tokens::SPACE, $line));
 
-        if (1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current())) {
+        if ($this->isControlEntry($iterator)) {
             $this->processControlEntry($iterator);
 
             return;
@@ -76,18 +76,7 @@ class Parser
 
         $resourceRecord = new ResourceRecord();
 
-        if (
-            1 === preg_match('/^\d+$/', $iterator->current()) ||
-            Classes::isValid(strtoupper($iterator->current())) ||
-            RDataTypes::isValid(strtoupper($iterator->current()))
-        ) {
-            $resourceRecord->setName($this->previousName);
-        } else {
-            $resourceRecord->setName($iterator->current());
-            $this->previousName = $iterator->current();
-            $iterator->next();
-        }
-
+        $this->processResourceName($iterator, $resourceRecord);
         $this->processTtl($iterator, $resourceRecord);
         $this->processClass($iterator, $resourceRecord);
         $resourceRecord->setRdata($this->extractRdata($iterator));
@@ -109,12 +98,28 @@ class Parser
     }
 
     /**
+     * Processes a ResourceRecord name.
+     *
+     * @param \ArrayIterator $iterator
+     * @param ResourceRecord $resourceRecord
+     */
+    private function processResourceName(\ArrayIterator $iterator, ResourceRecord $resourceRecord): void
+    {
+        if ($this->isResourceName($iterator)) {
+            $this->previousName = $iterator->current();
+            $iterator->next();
+        }
+
+        $resourceRecord->setName($this->previousName);
+    }
+
+    /**
      * Set RR's TTL if there is one.
      *
      * @param \ArrayIterator $iterator
      * @param ResourceRecord $resourceRecord
      */
-    private function processTtl(\ArrayIterator $iterator, ResourceRecord $resourceRecord)
+    private function processTtl(\ArrayIterator $iterator, ResourceRecord $resourceRecord): void
     {
         if (1 === preg_match('/^\d+$/', $iterator->current())) {
             $resourceRecord->setTtl($iterator->current());
@@ -128,12 +133,40 @@ class Parser
      * @param \ArrayIterator $iterator
      * @param ResourceRecord $resourceRecord
      */
-    private function processClass(\ArrayIterator $iterator, ResourceRecord $resourceRecord)
+    private function processClass(\ArrayIterator $iterator, ResourceRecord $resourceRecord): void
     {
         if (Classes::isValid(strtoupper($iterator->current()))) {
             $resourceRecord->setClass(strtoupper($iterator->current()));
             $iterator->next();
         }
+    }
+
+    /**
+     * Determine if iterant is a resource name.
+     *
+     * @param \ArrayIterator $iterator
+     *
+     * @return bool
+     */
+    private function isResourceName(\ArrayIterator $iterator): bool
+    {
+        return !(
+            preg_match('/^\d+$/', $iterator->current()) ||
+            Classes::isValid(strtoupper($iterator->current())) ||
+            RDataTypes::isValid(strtoupper($iterator->current()))
+        );
+    }
+
+    /**
+     * Determine if iterant is a control entry such as $TTL, $ORIGIN, $INCLUDE, etcetera.
+     *
+     * @param \ArrayIterator $iterator
+     *
+     * @return bool
+     */
+    private function isControlEntry(\ArrayIterator $iterator): bool
+    {
+        return 1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current());
     }
 
     /**
