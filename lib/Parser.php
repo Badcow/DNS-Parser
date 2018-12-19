@@ -64,7 +64,7 @@ class Parser
      *
      * @throws ParseException
      */
-    private function processLine(string $line)
+    private function processLine(string $line): void
     {
         $iterator = new \ArrayIterator(explode(Tokens::SPACE, $line));
 
