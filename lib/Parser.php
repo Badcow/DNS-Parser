@@ -182,7 +182,7 @@ class Parser
         $iterator->next();
 
         if (!Rdata\Factory::isTypeImplemented($type)) {
-            return new PolymorphicRdata($type, implode(' ', $this->getAllRemaining($iterator)));
+            return new PolymorphicRdata($type, implode(Tokens::SPACE, $this->getAllRemaining($iterator)));
         }
 
         switch ($type) {
