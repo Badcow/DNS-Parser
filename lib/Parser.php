@@ -201,40 +201,40 @@ class Parser
      * @param \ArrayIterator $iterator
      *
      * @return Rdata\TXT
-     *
-     * @throws ParseException
      */
     private function handleTxtRdata(\ArrayIterator $iterator): Rdata\TXT
     {
         $string = new StringIterator(implode(Tokens::SPACE, $this->getAllRemaining($iterator)));
         $txt = new StringIterator();
-        $doubleQuotesOpen = false;
 
         while ($string->valid()) {
-            switch ($string->current()) {
-                case Tokens::BACKSLASH:
-                    $string->next();
-                    $txt->append($string->current());
-                    $string->next();
-                    break;
-                case Tokens::DOUBLE_QUOTES:
-                    $doubleQuotesOpen = !$doubleQuotesOpen;
-                    $string->next();
-                    break;
-                default:
-                    if ($doubleQuotesOpen) {
-                        $txt->append($string->current());
-                    }
-                    $string->next();
-                    break;
-            }
-        }
-
-        if ($doubleQuotesOpen) {
-            throw new ParseException('Unbalanced double quotation marks.');
+            $this->handleTxt($string, $txt);
+            $string->next();
         }
 
         return Rdata\Factory::txt((string) $txt);
+    }
+
+    /**
+     * @param StringIterator $string
+     * @param StringIterator $txt
+     */
+    private function handleTxt(StringIterator $string, StringIterator $txt)
+    {
+        if ($string->isNot(Tokens::DOUBLE_QUOTES)) {
+            return;
+        }
+
+        $string->next();
+
+        while ($string->isNot(Tokens::DOUBLE_QUOTES) && $string->valid()) {
+            if ($string->is(Tokens::BACKSLASH)) {
+                $string->next();
+            }
+
+            $txt->append($string->current());
+            $string->next();
+        }
     }
 
     /**
