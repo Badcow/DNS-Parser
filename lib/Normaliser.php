@@ -49,18 +49,9 @@ class Normaliser
     public function process(): string
     {
         while ($this->string->valid()) {
-            switch ($this->string->current()) {
-                case Tokens::DOUBLE_QUOTES:
-                    $this->handleTxt();
-                    break;
-                case Tokens::SEMICOLON:
-                    $this->handleComment();
-                    break;
-                case Tokens::OPEN_BRACKET:
-                    $this->handleMultiline();
-                    break;
-            }
-
+            $this->handleTxt();
+            $this->handleComment();
+            $this->handleMultiline();
             $this->append();
         }
 
@@ -74,6 +65,10 @@ class Normaliser
      */
     private function handleComment(): void
     {
+        if ($this->string->isNot(Tokens::SEMICOLON)) {
+            return;
+        }
+
         while ($this->string->isNot(Tokens::LINE_FEED) && $this->string->valid()) {
             $this->string->next();
         }
@@ -87,6 +82,10 @@ class Normaliser
      */
     private function handleTxt(): void
     {
+        if ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
+            return;
+        }
+
         $this->append();
 
         while ($this->string->isNot(Tokens::DOUBLE_QUOTES)) {
@@ -114,32 +113,30 @@ class Normaliser
      */
     private function handleMultiline(): void
     {
-        $openBracket = true;
-        $this->string->next();
-        while ($openBracket && $this->string->valid()) {
-            switch ($this->string->current()) {
-                case Tokens::DOUBLE_QUOTES:
-                    $this->handleTxt();
-                    $this->append();
-                    break;
-                case Tokens::SEMICOLON:
-                    $this->handleComment();
-                    break;
-                case Tokens::LINE_FEED:
-                    $this->string->next();
-                    break;
-                case Tokens::CLOSE_BRACKET:
-                    $openBracket = false;
-                    $this->string->next();
-                    break;
-                default:
-                    $this->append();
-            }
+        if ($this->string->isNot(Tokens::OPEN_BRACKET)) {
+            return;
         }
 
-        if ($openBracket) {
-            throw new ParseException('End of file reached. Unclosed bracket.');
+        $this->string->next();
+        while ($this->string->valid()) {
+            $this->handleTxt();
+            $this->handleComment();
+
+            if ($this->string->is(Tokens::LINE_FEED)) {
+                $this->string->next();
+                continue;
+            }
+
+            if ($this->string->is(Tokens::CLOSE_BRACKET)) {
+                $this->string->next();
+
+                return;
+            }
+
+            $this->append();
         }
+
+        throw new ParseException('End of file reached. Unclosed bracket.');
     }
 
     /**
