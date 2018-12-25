@@ -34,9 +34,7 @@ class Parser
      */
     public static function parse(string $name, string $zone): Zone
     {
-        $parser = new self();
-
-        return $parser->makeZone($name, $zone);
+        return (new self())->makeZone($name, $zone);
     }
 
     /**
@@ -194,7 +192,7 @@ class Parser
                 return $this->handleAplRdata($iterator);
         }
 
-        return call_user_func_array(['\\Badcow\\DNS\\Rdata\\Factory', $type], $this->getAllRemaining($iterator));
+        return call_user_func_array([Rdata\Factory::class, $type], $this->getAllRemaining($iterator));
     }
 
     /**
@@ -219,7 +217,7 @@ class Parser
      * @param StringIterator $string
      * @param StringIterator $txt
      */
-    private function handleTxt(StringIterator $string, StringIterator $txt)
+    private function handleTxt(StringIterator $string, StringIterator $txt): void
     {
         if ($string->isNot(Tokens::DOUBLE_QUOTES)) {
             return;
@@ -242,9 +240,9 @@ class Parser
      *
      * @param \ArrayIterator $iterator
      *
-     * @return mixed
+     * @return string
      */
-    private function pop(\ArrayIterator $iterator)
+    private function pop(\ArrayIterator $iterator): string
     {
         $current = $iterator->current();
         $iterator->next();

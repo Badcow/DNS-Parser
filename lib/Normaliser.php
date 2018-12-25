@@ -36,9 +36,7 @@ class Normaliser
      */
     public static function normalise(string $zone): string
     {
-        $normaliser = new self($zone);
-
-        return $normaliser->process();
+        return (new self($zone))->process();
     }
 
     /**
