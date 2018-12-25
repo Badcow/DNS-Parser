@@ -292,8 +292,8 @@ class Parser
      */
     private function handleLocRdata(\ArrayIterator $iterator): Rdata\LOC
     {
-        $lat = $this->dmsToDecimal($this->pop($iterator), $this->pop($iterator), $this->pop($iterator), $this->pop($iterator));
-        $lon = $this->dmsToDecimal($this->pop($iterator), $this->pop($iterator), $this->pop($iterator), $this->pop($iterator));
+        $lat = $this->dmsToDecimal((int) $this->pop($iterator), (int) $this->pop($iterator), (float) $this->pop($iterator), $this->pop($iterator));
+        $lon = $this->dmsToDecimal((int) $this->pop($iterator), (int) $this->pop($iterator), (float) $this->pop($iterator), $this->pop($iterator));
 
         return Rdata\Factory::Loc(
             $lat,
