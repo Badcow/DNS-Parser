@@ -119,7 +119,7 @@ class Parser
      */
     private function processTtl(\ArrayIterator $iterator, ResourceRecord $resourceRecord): void
     {
-        if (1 === preg_match('/^\d+$/', $iterator->current())) {
+        if ($this->isTTL($iterator)) {
             $resourceRecord->setTtl($iterator->current());
             $iterator->next();
         }
@@ -149,7 +149,7 @@ class Parser
     private function isResourceName(\ArrayIterator $iterator): bool
     {
         return !(
-            preg_match('/^\d+$/', $iterator->current()) ||
+            $this->isTTL($iterator) ||
             Classes::isValid(strtoupper($iterator->current())) ||
             RDataTypes::isValid(strtoupper($iterator->current()))
         );
@@ -165,6 +165,18 @@ class Parser
     private function isControlEntry(\ArrayIterator $iterator): bool
     {
         return 1 === preg_match('/^\$[A-Z0-9]+/i', $iterator->current());
+    }
+
+    /**
+     * Determine if the iterant is a TTL (i.e. it is an integer).
+     *
+     * @param \ArrayIterator $iterator
+     *
+     * @return bool
+     */
+    private function isTTL(\ArrayIterator $iterator): bool
+    {
+        return 1 === preg_match('/^\d+$/', $iterator->current());
     }
 
     /**
