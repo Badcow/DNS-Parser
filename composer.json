@@ -18,5 +18,10 @@
         "psr-4": {
             "Badcow\\DNS\\Parser\\": "lib/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Badcow\\DNS\\Parser\\Tests\\": "tests/"
+        }
     }
 }
