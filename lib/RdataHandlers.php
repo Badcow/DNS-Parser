@@ -23,7 +23,7 @@ class RdataHandlers
 
     public static function getHandlers(): array
     {
-        return static::$handlers;
+        return self::$handlers;
     }
 
     /**
