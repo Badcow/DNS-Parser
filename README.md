@@ -1,3 +1,8 @@
+!! Code-base has been moved !!
+==============================
+The DNS Parser has been incorporated into [Badcow DNS Zone Library](https://github.com/Badcow/DNS) to enable a better release cycle.
+The namespaces remain unchanged. You only need to include `badcow/dns` in your composer config.
+
 Badcow DNS Zone Parser
 ======================
 
