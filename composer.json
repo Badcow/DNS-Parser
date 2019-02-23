@@ -9,7 +9,7 @@
     ],
     "require": {
         "php": "~7.1",
-        "badcow/dns": ">=1.3"
+        "badcow/dns": "1.3 - 2.1"
     },
     "require-dev": {
         "phpunit/phpunit": "~7.5"
